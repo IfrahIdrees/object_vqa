@@ -17,17 +17,17 @@ flags.DEFINE_integer("num_slots", 10, "Number of slots in Slot Attention.")
 flags.DEFINE_integer("num_iterations", 3, "Number of attention iterations.")
 
 
-def build_encoder():
+def build_object_encoder(num_slots=10, num_iterations=3, checkpoint_dir="pretrained_weights/slot_attention_encoder", batch_size=500):
     resolution = (128, 128)
-    slot_encoder = model_utils.SlotAttentionEncoder(resolution=resolution, num_slots=FLAGS.num_slots, num_iterations=FLAGS.num_iterations)
-    input_layer = tf.keras.Input(resolution + (3,), FLAGS.batch_size)
+    slot_encoder = model_utils.SlotAttentionEncoder(resolution=resolution, num_slots=num_slots, num_iterations=num_iterations)
+    input_layer = tf.keras.Input(resolution + (3,), batch_size)
     output_layer = slot_encoder(input_layer)
     encoder_model = tf.keras.Model(inputs=input_layer, outputs=output_layer)
-    encoder_model.load_weights(FLAGS.checkpoint_dir + "/slot_attention_object_discovery_encoder")
+    encoder_model.load_weights(checkpoint_dir + "/slot_attention_object_discovery_encoder")
     return encoder_model.layers[1]
 
 def main(argv):
-    print(build_encoder())
+    print(build_object_encoder(FLAGS.num_slots, FLAGS.num_iterations, FLAGS.checkpoint_dir, FLAGS.batch_size))
 
 if __name__ == "__main__":
   app.run(main)
