@@ -1,11 +1,11 @@
 
 import tensorflow as tf
 import tf.keras.layers as layers
-from slot_attention.model import SlotAttention
+from slot_attention.model import SlotAttentionEncoder
 
 class ocvqa(layers.Layer):
-    def __init__(self, vocab_size, answer_vocab_size, slot_num_iterations=3, num_slots=10, relation_dim=256, response_dims=[256, 256, 29]):
-        self.objects = SlotAttention(slot_num_iterations, num_slots, slot_size=64, mlp_hidden_size=128)
+    def __init__(self, vocab_size, answer_vocab_size, resolution, slot_num_iterations=3, num_slots=10, relation_dim=256, response_dims=[256, 256, 29]):
+        self.objects = SlotAttentionEncoder(resolution, num_iterations=slot_num_iterations, num_slots=num_slots)
         self.question = q_encoder(vocab_size)
         self.relation_layer = layers.Sequential()
         for _ in range(4):
