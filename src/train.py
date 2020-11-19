@@ -1,7 +1,9 @@
 import __init__
-
+import time, datetime
 import tensorflow as tf
 import ocvqa
+import dataset as data_util
+
 
 from absl import app
 from absl import flags
@@ -11,7 +13,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string("model_dir", "checkpoints/",
                     "Where to save the checkpoints.")
 flags.DEFINE_integer("seed", 0, "Random seed.")
-flags.DEFINE_integer("batch_size", 64, "Batch size for the model.")
+flags.DEFINE_integer("batch_size", 4, "Batch size for the model.")
 flags.DEFINE_integer("num_slots", 7, "Number of slots in Slot Attention.")
 flags.DEFINE_integer("num_iterations", 3, "Number of attention iterations.")
 flags.DEFINE_float("learning_rate", 0.0004, "Learning rate.")
@@ -27,11 +29,11 @@ flags.DEFINE_integer("decay_steps", 100000,
 @tf.function
 def train_step(batch, model, optimizer):
     """Perform a single training step."""
-
+    print(batch)
     # Get the prediction of the models and compute the loss.
     with tf.GradientTape() as tape:
-        preds = model(batch["image"], batch["question"])
-        loss_value = tf.keras.losses.sparse_categorical_crossentropy(batch["response"], preds)
+        preds = model([batch["image"], batch["question"]])
+        loss_value = tf.keras.losses.sparse_categorical_crossentropy(batch["answer"], preds, from_logits=False)
 
     # Get and apply gradients.
     gradients = tape.gradient(loss_value, model.trainable_weights)
@@ -49,19 +51,20 @@ def main(argv):
     num_train_steps = FLAGS.num_train_steps
     decay_rate = FLAGS.decay_rate
     decay_steps = FLAGS.decay_steps
-    device = FLAGS.device
     tf.random.set_seed(FLAGS.seed)
     resolution = (128, 128)
 
-    # load dataset. batch must be a dictionary with keys {"images", "questions", "response"}
-    # 
-    vocab_size = ??
-    answer_vocab_size = ??
+    # load dataset. batch must be a dictionary with keys {"images", "question", "answer"}
+
+    data_iterator, tokenizers = data_util.build_clevr_iterator(batch_size=batch_size, split='train[:10%]')
+    vocab_size = len(tokenizers[0].get_vocabulary())
+    answer_vocab_size = len(tokenizers[1].get_vocabulary())
 
     optimizer = tf.keras.optimizers.Adam(base_learning_rate, epsilon=1e-08)
 
-    model = ocvqa.build_ocvqa_model(vocab_size, answer_vocab_size)
-
+    model = ocvqa.build_ocvqa_model(vocab_size, answer_vocab_size, batch_size=batch_size)
+    print(model.summary())
+    
     # Prepare checkpoint manager.
     global_step = tf.Variable(
         0, trainable=False, name="global_step", dtype=tf.int64)
@@ -81,7 +84,7 @@ def main(argv):
         learning_rate = base_learning_rate
         # learning_rate = learning_rate * (decay_rate ** (
         #     tf.cast(global_step, tf.float32) / tf.cast(decay_steps, tf.float32)))
-        optimizer.lr = learning_rate.numpy()
+        optimizer.lr = learning_rate
 
         loss_value = train_step(batch, model, optimizer)
 
