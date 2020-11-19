@@ -73,4 +73,8 @@ def build_clevr_iterator(batch_size, split, **kwargs):
     return iter(ds), tokenizers
 
 if __name__=="__main__":
-    ds = tfds.load("clevr", split='test')
+    ds = tfds.load("clevr:3.1.0", split='test[:20]')
+    ds = ds.take(15)
+    q_tokenizer = preprocess.text.Tokenizer(max_vocab_size=1000)
+    a_tokenizer = preprocess.text.Tokenizer(max_vocab_size=1000)
+    ds.map(lambda x: preprocess(x, (128,128), q_tokenizer, a_tokenizer))
