@@ -6,10 +6,11 @@ import slot_attention.data as slot
 
 
 def preprocess_text(sentences, tokenizer, max_length=32):
+    sentences = map(lambda s: s.decode('utf-8'), list(sentences.numpy()))
     tokenizer.fit_on_texts(sentences) # update vocab
     sequences = tokenizer.texts_to_sequences(sentences) # word2idx
-    padded = preprocess.sequence.pad_sequence(sequences, maxlen=max_length, padding='post', truncating='post')
-    return padded
+    padded = preprocess.sequence.pad_sequences(sequences, maxlen=max_length, padding='post', truncating='post')
+    return tf.convert_to_tensor(padded, dtype=tf.int32)
 
 def preprocess_questions(features, q_tokenizer, a_tokenizer, max_q_length=32):
     question = preprocess_text(features['question_answer']['question'], q_tokenizer, max_length=max_q_length)
@@ -73,8 +74,9 @@ def build_clevr_iterator(batch_size, split, **kwargs):
     return iter(ds), tokenizers
 
 if __name__=="__main__":
-    ds = tfds.load("clevr:3.1.0", split='test[:20]')
-    ds = ds.take(15)
-    q_tokenizer = preprocess.text.Tokenizer(max_vocab_size=1000)
-    a_tokenizer = preprocess.text.Tokenizer(max_vocab_size=1000)
-    ds.map(lambda x: preprocess(x, (128,128), q_tokenizer, a_tokenizer))
+    ds, tokenizers = build_clevr('train[:10]')
+    print(tokenizers[0].word_index)
+    print(tokenizers[1].word_index)
+    for d in ds:
+        print(d)
+    
