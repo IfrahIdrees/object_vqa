@@ -33,12 +33,11 @@ def train_step(batch, model, optimizer):
     # Get the prediction of the models and compute the loss.
     with tf.GradientTape() as tape:
         preds = model([batch["image"], batch["question"]])
-        loss_value = tf.keras.losses.sparse_categorical_crossentropy(batch["answer"], preds, from_logits=False)
+        loss_value = tf.reduce_mean(tf.keras.losses.sparse_categorical_crossentropy(batch["answer"], preds, from_logits=False))
 
     # Get and apply gradients.
     gradients = tape.gradient(loss_value, model.trainable_weights)
     optimizer.apply_gradients(zip(gradients, model.trainable_weights))
-
     return loss_value
 
 def main(argv):

@@ -66,6 +66,7 @@ def build_ocvqa_model(vocab_size, answer_vocab_size, question_max_length=32, res
     #images = tf.keras.Input(resolution + (3,), batch_size=batch_size)
     questions = tf.keras.Input(question_max_length, batch_size=batch_size)
     objects = build_object_encoder(batch_size=batch_size)
+    objects.trainable = False
     vqahead = ocvqa(vocab_size, answer_vocab_size, relation_dim, response_dims)(objects.layers[1].output, questions)
     return tf.keras.Model(inputs=(objects.input, questions), outputs=vqahead)
 
