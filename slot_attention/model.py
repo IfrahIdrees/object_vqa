@@ -122,7 +122,6 @@ def unstack_and_split(x, batch_size, num_channels=3):
   channels, masks = tf.split(unstacked, [num_channels, 1], axis=-1)
   return channels, masks
 
-
 class SlotAttentionAutoEncoder(layers.Layer):
   """Slot Attention-based auto-encoder for object discovery."""
 
@@ -321,5 +320,54 @@ def build_model(resolution, batch_size, num_slots, num_iterations,
   return model
 
 
+class SlotAttentionEncoder(layers.Layer):
+  """Slot Attention-based part of the auto-encoder for object discovery."""
 
+  def __init__(self, resolution, num_slots, num_iterations):
+    """Builds the Slot Attention-based encoder.
 
+    Args:
+      resolution: Tuple of integers specifying width and height of input image.
+      num_slots: Number of slots in Slot Attention.
+      num_iterations: Number of iterations in Slot Attention.
+    """
+    super().__init__()
+    self.resolution = resolution
+    self.num_slots = num_slots
+    self.num_iterations = num_iterations
+
+    self.encoder_cnn = tf.keras.Sequential([
+        layers.Conv2D(64, kernel_size=5, padding="SAME", activation="relu"),
+        layers.Conv2D(64, kernel_size=5, padding="SAME", activation="relu"),
+        layers.Conv2D(64, kernel_size=5, padding="SAME", activation="relu"),
+        layers.Conv2D(64, kernel_size=5, padding="SAME", activation="relu")
+    ], name="encoder_cnn")
+
+    self.encoder_pos = SoftPositionEmbed(64, self.resolution)
+
+    self.layer_norm = layers.LayerNormalization()
+    self.mlp = tf.keras.Sequential([
+        layers.Dense(64, activation="relu"),
+        layers.Dense(64)
+    ], name="feedforward")
+
+    self.slot_attention = SlotAttention(
+        num_iterations=self.num_iterations,
+        num_slots=self.num_slots,
+        slot_size=64,
+        mlp_hidden_size=128)
+
+  def call(self, image):
+    # `image` has shape: [batch_size, width, height, num_channels].
+
+    # Convolutional encoder with position embedding.
+    x = self.encoder_cnn(image)  # CNN Backbone.
+    x = self.encoder_pos(x)  # Position embedding.
+    x = spatial_flatten(x)  # Flatten spatial dimensions (treat image as set).
+    x = self.mlp(self.layer_norm(x))  # Feedforward network on set.
+    # `x` has shape: [batch_size, width*height, input_size].
+
+    # Slot Attention module.
+    slots = self.slot_attention(x)
+    # `slots` has shape: [batch_size, num_slots, slot_size].
+    return slots
