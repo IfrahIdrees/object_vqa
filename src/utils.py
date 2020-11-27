@@ -28,6 +28,11 @@ def build_object_encoder(num_slots=10, num_iterations=3, checkpoint_dir="pretrai
     encoder_model.load_weights(checkpoint_dir + "/slot_attention_object_discovery_encoder")
     return encoder_model
 
+def accuracy(targets, probs):
+    results = tf.argmax(probs, axis=-1)
+    return tf.reduce_mean(tf.cast(tf.equal(results, targets), dtype=tf.float64))
+
+
 def main(argv):
     print(build_object_encoder(FLAGS.num_slots, FLAGS.num_iterations, FLAGS.checkpoint_dir, FLAGS.batch_size))
 

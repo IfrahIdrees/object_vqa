@@ -3,14 +3,14 @@ import time, datetime
 import tensorflow as tf
 import ocvqa
 import dataset as data_util
-
+import utils
 
 from absl import app
 from absl import flags
 from absl import logging
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string("model_dir", "checkpoints/",
+flags.DEFINE_string("model_dir", "./checkpoints/",
                     "Where to save the checkpoints.")
 flags.DEFINE_integer("seed", 0, "Random seed.")
 flags.DEFINE_integer("batch_size", 4, "Batch size for the model.")
@@ -29,16 +29,16 @@ flags.DEFINE_integer("decay_steps", 100000,
 @tf.function
 def train_step(batch, model, optimizer):
     """Perform a single training step."""
-    print(batch)
+    # print(batch)
     # Get the prediction of the models and compute the loss.
     with tf.GradientTape() as tape:
         preds = model([batch["image"], batch["question"]])
         loss_value = tf.reduce_mean(tf.keras.losses.sparse_categorical_crossentropy(batch["answer"], preds, from_logits=False))
-
+        accuracy = utils.accuracy(batch['answer'], preds)
     # Get and apply gradients.
     gradients = tape.gradient(loss_value, model.trainable_weights)
     optimizer.apply_gradients(zip(gradients, model.trainable_weights))
-    return loss_value
+    return loss_value, accuracy
 
 def main(argv):
     del argv
@@ -77,6 +77,13 @@ def main(argv):
     else:
         logging.info("Initializing from scratch.")
 
+    # prepare tensorboard logging
+    current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
+    test_log_dir = 'logs/gradient_tape/' + current_time + '/test'
+    train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+    test_summary_writer = tf.summary.create_file_writer(test_log_dir)
+
     start = time.time()
     for _ in range(num_train_steps):
         batch = next(data_iterator)
@@ -85,12 +92,15 @@ def main(argv):
         #     tf.cast(global_step, tf.float32) / tf.cast(decay_steps, tf.float32)))
         optimizer.lr = learning_rate
 
-        loss_value = train_step(batch, model, optimizer)
-
+        loss_value, accuracy = train_step(batch, model, optimizer)
+        with train_summary_writer.as_default():
+            tf.summary.scalar('loss', loss_value, step=global_step)
+            tf.summary.scalar('accuracy', accuracy, step=global_step)
+        
         # Update the global step. We update it before logging the loss and saving
         # the model so that the last checkpoint is saved at the last iteration.
         global_step.assign_add(1)
-
+        
         # Log the training loss.
         if not global_step % 100:
             logging.info("Step: %s, Loss: %.6f, Time: %s",
