@@ -23,7 +23,8 @@ flags.DEFINE_integer("warmup_steps", 10000,
 flags.DEFINE_float("decay_rate", 0.5, "Rate for the learning rate decay.")
 flags.DEFINE_integer("decay_steps", 100000,
                      "Number of steps for the learning rate decay.")
-
+flags.DEFINE_bool("full_eval", False,
+                  "If True, use full evaluation set, otherwise a single batch.")
 
 
 @tf.function
@@ -39,6 +40,25 @@ def train_step(batch, model, optimizer):
     gradients = tape.gradient(loss_value, model.trainable_weights)
     optimizer.apply_gradients(zip(gradients, model.trainable_weights))
     return loss_value, accuracy
+
+def evaluate(data_iterator, model):
+    """Run evaluation."""
+    test_set_size = 15000
+    if FLAGS.full_eval:  # Evaluate on the full validation set  
+        num_eval_batches = test_set_size // FLAGS.batch_size
+    else:
+        # By default, we only test on a single batch for faster evaluation.
+        num_eval_batches = 1
+    loss_value = 0
+    accuracy = 0
+    
+    for _ in tf.range(num_eval_batches):
+        batch = next(data_iterator)
+        preds = model([batch["image"], batch["question"]])
+        loss_value += tf.reduce_sum(tf.keras.losses.sparse_categorical_crossentropy(batch["answer"], preds, from_logits=False))
+        accuracy += FLAGS.batch_size * utils.accuracy(batch['answer'], preds)
+    return loss_value/test_set_size, accuracy/test_set_size
+
 
 def main(argv):
     del argv
@@ -56,6 +76,7 @@ def main(argv):
     # load dataset. batch must be a dictionary with keys {"images", "question", "answer"}
 
     data_iterator, tokenizers = data_util.build_clevr_iterator(batch_size=batch_size, split='train[:10%]')
+    test_data_iterator, _ = data_util.build_clevr_iterator(batch_size=batch_size, split='validation')
     vocab_size = len(tokenizers[0].get_vocabulary())
     answer_vocab_size = len(tokenizers[1].get_vocabulary())
 
@@ -97,6 +118,15 @@ def main(argv):
             tf.summary.scalar('loss', loss_value, step=global_step)
             tf.summary.scalar('accuracy', accuracy, step=global_step)
         
+        if not global_step % 100: # test progress
+            loss_value, accuracy = evaluate(test_data_iterator, model)
+            with test_summary_writer.as_default():
+                tf.summary.scalar('loss', loss_value, step=global_step)
+                tf.summary.scalar('accuracy', accuracy, step=global_step)
+            logging.info("Step: %s, Validation Loss: %.6f, Time: %s",
+                    global_step.numpy(), loss_value,
+                    datetime.timedelta(seconds=time.time() - start))
+
         # Update the global step. We update it before logging the loss and saving
         # the model so that the last checkpoint is saved at the last iteration.
         global_step.assign_add(1)

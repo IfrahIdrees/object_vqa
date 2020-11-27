@@ -86,7 +86,7 @@ def build_clevr_iterator(batch_size, split, **kwargs):
     ds, tokenizers = build_clevr(split=split, **kwargs)
     ds = ds.repeat(-1)
     ds = ds.batch(batch_size, drop_remainder=True)
-    print("==========CLEVR BUILT===========")
+    print("==========CLEVR BUILT:" + split+"===========")
     return iter(ds), tokenizers
 
 if __name__=="__main__":
