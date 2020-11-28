@@ -73,7 +73,9 @@ def build_clevr(split, resolution=(128, 128), max_length=32, max_vocab_size=1000
     a_vectorization.adapt(answer_ds)
 
     def _preprocess_fn(x, resolution, max_n_objects=max_n_objects):
-        return preprocess_clevr(x, q_vectorization, a_vectorization, resolution, apply_crop=apply_crop, get_properties=get_properties,max_n_objects=max_n_objects)
+        return preprocess_clevr(
+            x, q_vectorization, a_vectorization, resolution, apply_crop=apply_crop, get_properties=get_properties,
+            max_n_objects=max_n_objects)
    
     resolution = tf.constant(resolution, dtype=tf.int32)
     ds = ds.map(lambda x: _preprocess_fn(x, resolution))
@@ -82,9 +84,10 @@ def build_clevr(split, resolution=(128, 128), max_length=32, max_vocab_size=1000
 
 def build_clevr_iterator(batch_size, split, **kwargs):
     ds, tokenizers = build_clevr(split=split, **kwargs)
+#     print("num examples are", len(list(ds)))
     ds = ds.repeat(-1)
     ds = ds.batch(batch_size, drop_remainder=True)
-    print("==========CLEVR BUILT===========")
+    print("==========CLEVR BUILT:" + split+"===========")
     return iter(ds), tokenizers
 
 if __name__=="__main__":

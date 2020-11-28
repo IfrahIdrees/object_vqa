@@ -76,7 +76,7 @@ def main(argv):
 
     # load dataset. batch must be a dictionary with keys {"images", "question", "answer"}
 
-    data_iterator, tokenizers = data_util.build_clevr_iterator(batch_size=batch_size, split='train[:10%]')
+    data_iterator, tokenizers = data_util.build_clevr_iterator(batch_size=batch_size, split='train[:30%]')
     test_data_iterator, _ = data_util.build_clevr_iterator(batch_size=batch_size, split='validation')
     vocab_size = len(tokenizers[0].get_vocabulary())
     answer_vocab_size = len(tokenizers[1].get_vocabulary())

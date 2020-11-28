@@ -84,6 +84,7 @@ def build_clevr(split, resolution=(128, 128), max_length=32, max_vocab_size=1000
 
 def build_clevr_iterator(batch_size, split, **kwargs):
     ds, tokenizers = build_clevr(split=split, **kwargs)
+#     print("num examples are", len(list(ds)))
     ds = ds.repeat(-1)
     ds = ds.batch(batch_size, drop_remainder=True)
     print("==========CLEVR BUILT:" + split+"===========")
