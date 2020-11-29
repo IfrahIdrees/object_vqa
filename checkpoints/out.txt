@@ -1,0 +1,12 @@
+0
+checkpoint
+ckpt-1.data-00000-of-00001
+ckpt-1.index
+ckpt-2.data-00000-of-00001
+ckpt-2.index
+ckpt-3.data-00000-of-00001
+ckpt-3.index
+nohup.out
+out.txt
+0.00user 0.00system 0:00.00elapsed ?%CPU (0avgtext+0avgdata 2540maxresident)k
+0inputs+8outputs (0major+108minor)pagefaults 0swaps

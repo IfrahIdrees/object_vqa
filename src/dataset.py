@@ -5,6 +5,7 @@ import tensorflow.keras.preprocessing as preprocess
 from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
 import slot_attention.data as slot
 from functools import partial
+import utils
 
 def preprocess_text(sentences, tokenizer, max_length=32):
     return tokenizer(sentences)
@@ -12,7 +13,7 @@ def preprocess_text(sentences, tokenizer, max_length=32):
 def preprocess_questions(features, q_tokenizer, a_tokenizer, max_q_length=32):
     question = preprocess_text(features['question_answer']['question'], q_tokenizer, max_length=max_q_length)
     answer = preprocess_text(features['question_answer']['answer'], a_tokenizer, max_length=1)
-    return {'question': question, 'answer': answer}
+    return {'question': question, 'answer': answer, 'question_text': features['question_answer']['question'], 'answer_text': features['question_answer']['answer']}
 
 def preprocess_clevr(features, q_tokenizer, a_tokenizer, resolution=(128,128), **kwords):
     image_data = slot.preprocess_clevr(features, resolution, **kwords)
@@ -24,13 +25,15 @@ def preprocess_pairs_img_q(features):
     img = features['image']
     q = features['question']
     a = features['answer']
-    ds = tf.data.Dataset.from_tensor_slices((q,a))
-    ds = ds.map(lambda q, a: {'image': img, 'question': q, 'answer': a})
+    q_t = features['question_text']
+    a_t = features['answer_text']
+    ds = tf.data.Dataset.from_tensor_slices((q,a, q_t, a_t))
+    ds = ds.map(lambda q, a, q_t, a_t: {'image': img, 'question': q, 'answer': a, 'question_text': q_t, 'answer_text': a_t})
     return ds
 
 ## Functions taken from slot attention 
 def build_clevr(split, resolution=(128, 128), max_length=32, max_vocab_size=1000, shuffle=False, max_n_objects=10,
-                num_eval_examples=512, get_properties=True, apply_crop=False):
+                num_eval_examples=512, get_properties=True, apply_crop=False, tokenizer= None):
     """Build CLEVR dataset."""
     if split == "train" or split == "train_eval":
         #ds = tfds.load("clevr:3.0.0", split="train", shuffle_files=shuffle)
@@ -62,8 +65,12 @@ def build_clevr(split, resolution=(128, 128), max_length=32, max_vocab_size=1000
                             tf.constant(max_n_objects, dtype=tf.int32))
 
     ds = ds.filter(filter_fn)  # filter by number of objects
-    q_vectorization = TextVectorization(max_tokens=max_vocab_size, output_mode='int', output_sequence_length=max_length)
-    a_vectorization = TextVectorization(max_tokens=max_vocab_size, output_mode='int', output_sequence_length=1)
+    if tokenizer is not None:
+        q_vectorization = tokenizer[0]
+        a_vectorization = tokenizer[1]
+    else:
+        q_vectorization = TextVectorization(max_tokens=max_vocab_size, output_mode='int', output_sequence_length=max_length)
+        a_vectorization = TextVectorization(max_tokens=max_vocab_size, output_mode='int', output_sequence_length=1)
     
     question_ds = ds.map(lambda x: x['question_answer']['question'])
     answer_ds = ds.map(lambda x: x['question_answer']['answer'])
@@ -87,14 +94,28 @@ def build_clevr_iterator(batch_size, split, **kwargs):
 #     print("num examples are", len(list(ds)))
     ds = ds.repeat(-1)
     ds = ds.batch(batch_size, drop_remainder=True)
+    ds = ds.shuffle(200)
     print("==========CLEVR BUILT:" + split+"===========")
     return iter(ds), tokenizers
 
-if __name__=="__main__":
 
+def load_tokenizers(directory='./checkpoints', output_sequence_length=32):
+    q_vocab = utils.load_vocab('question_vocab', directory=directory)
+    a_vocab = utils.load_vocab('answer_vocab', directory=directory)
+    q_vectorization = TextVectorization(max_tokens=len(q_vocab), output_mode='int', output_sequence_length=output_sequence_length)
+    a_vectorization = TextVectorization(max_tokens=len(a_vocab), output_mode='int', output_sequence_length=1)
+    q_vectorization.set_vocabulary(q_vocab)
+    a_vectorization.set_vocabulary(a_vocab)
+    return (q_vectorization, a_vectorization)
+    
+    
+if __name__=="__main__":
+    import utils
     ds, tokenizers = build_clevr('train[:1]')
     print(tokenizers[0].get_vocabulary())
     print(tokenizers[1].get_vocabulary())
+    inv_ans_vocab = utils.inverse_vocabulary(tokenizers[1].get_vocabulary())
     for d in ds:
         print(d)
-    
+        print(utils.sequence_to_text([d['answer'].numpy()[0]], inv_ans_vocab))
+        

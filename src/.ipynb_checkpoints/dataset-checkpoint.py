@@ -30,7 +30,7 @@ def preprocess_pairs_img_q(features):
 
 ## Functions taken from slot attention 
 def build_clevr(split, resolution=(128, 128), max_length=32, max_vocab_size=1000, shuffle=False, max_n_objects=10,
-                num_eval_examples=512, get_properties=True, apply_crop=False):
+                num_eval_examples=512, get_properties=True, apply_crop=False, tokenizer= None):
     """Build CLEVR dataset."""
     if split == "train" or split == "train_eval":
         #ds = tfds.load("clevr:3.0.0", split="train", shuffle_files=shuffle)
@@ -62,8 +62,12 @@ def build_clevr(split, resolution=(128, 128), max_length=32, max_vocab_size=1000
                             tf.constant(max_n_objects, dtype=tf.int32))
 
     ds = ds.filter(filter_fn)  # filter by number of objects
-    q_vectorization = TextVectorization(max_tokens=max_vocab_size, output_mode='int', output_sequence_length=max_length)
-    a_vectorization = TextVectorization(max_tokens=max_vocab_size, output_mode='int', output_sequence_length=1)
+    if tokenizer is not None:
+        q_vectorization = tokenizer[0]
+        a_vectorization = tokenizer[1]
+    else:
+        q_vectorization = TextVectorization(max_tokens=max_vocab_size, output_mode='int', output_sequence_length=max_length)
+        a_vectorization = TextVectorization(max_tokens=max_vocab_size, output_mode='int', output_sequence_length=1)
     
     question_ds = ds.map(lambda x: x['question_answer']['question'])
     answer_ds = ds.map(lambda x: x['question_answer']['answer'])
