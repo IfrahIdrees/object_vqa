@@ -12,17 +12,18 @@ class ocvqa(layers.Layer):
         super(ocvqa, self).__init__()
         self.question = q_encoder(vocab_size)
         self.relation_layer = tf.keras.Sequential()
+        self.initializer = tf.keras.initializers.HeNormal()
         for _ in range(4):
-            self.relation_layer.add(layers.Dense(relation_dim, activation='relu'))
+            self.relation_layer.add(layers.Dense(relation_dim, activation='relu', kernel_initializer=self.initializer))
         
         
         self.norm = tf.keras.layers.LayerNormalization()
         self.response_layer = tf.keras.Sequential()
-        self.response_layer.add(layers.Dense(response_dims[0], activation='relu'))
-        self.response_layer.add(layers.Dense(response_dims[1], activation='relu'))
+        self.response_layer.add(layers.Dense(response_dims[0], activation='relu', kernel_initializer=self.initializer))
+        self.response_layer.add(layers.Dense(response_dims[1], activation='relu', kernel_initializer=self.initializer))
         self.response_layer.add(layers.Dropout(0.5))
-        self.response_layer.add(layers.Dense(response_dims[2], activation='relu'))
-        self.linear_layer = layers.Dense(answer_vocab_size)
+        self.response_layer.add(layers.Dense(response_dims[2], activation='relu', kernel_initializer=self.initializer))
+        self.linear_layer = layers.Dense(answer_vocab_size, kernel_initializer=self.initializer)
         self.out = layers.Softmax(axis=1)
         
     def call(self, objects, q):
@@ -62,7 +63,7 @@ def build_ocvqa_model(vocab_size, answer_vocab_size, question_max_length=32, res
     #images = tf.keras.Input(resolution + (3,), batch_size=batch_size)
     questions = tf.keras.Input(question_max_length, batch_size=batch_size)
     objects = build_object_encoder(batch_size=batch_size)
-    objects.trainable = not freeze_slot
+    #objects.layers[].trainable = not freeze_slot
     vqahead = ocvqa(vocab_size, answer_vocab_size, relation_dim, response_dims)(objects.layers[1].output, questions)
     return tf.keras.Model(inputs=(objects.input, questions), outputs=vqahead)
 

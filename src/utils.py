@@ -24,7 +24,11 @@ def build_object_encoder(num_slots=10, num_iterations=3, checkpoint_dir="pretrai
     slot_encoder = model_utils.SlotAttentionEncoder(resolution=resolution, num_slots=num_slots, num_iterations=num_iterations)
     input_layer = tf.keras.Input(resolution + (3,), batch_size=batch_size)
     output_layer = slot_encoder(input_layer)
+    #output_layer.trainable = False
+    #output_layer.layers[-1].trainable = True 
     encoder_model = tf.keras.Model(inputs=input_layer, outputs=output_layer)
+    encoder_model.trainable = False
+    encoder_model.layers[-1] = True
     encoder_model.load_weights(checkpoint_dir + "/slot_attention_object_discovery_encoder")
     return encoder_model
 
