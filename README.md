@@ -23,7 +23,7 @@ The directory structure to run the training scripts is as follows:
 1) Navigate to the the parent directory (`google-research`)  and clone the folders of our codebase at the same level as slot attention folder. 
 2) src folder - contains all the source code for our OCVQA model <br/>
    pretained_weights folder - contains the pretained weights of slot attention module for the task of object discovery. <br/>
-   Checkpoints folder - contains all the checpoints during training of OCVQA
+   Checkpoints folder - contains all the checkpoints during training of OCVQA
 
 ## Training OCVQA
 To train OCVQA you can run either of (script.sh, script_0.sh or script_1.sh). These files are to be run in the parent directory
