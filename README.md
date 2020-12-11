@@ -1,4 +1,4 @@
-# object_vqa
+# OCVQA - An Object-Centric Approach to Visual Question Answering
 Course Project CS2950K
 
 ## Requirements
