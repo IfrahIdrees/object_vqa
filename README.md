@@ -1,76 +1,32 @@
 # object_vqa
 Course Project CS2950K
+
 ## Requirements
 
 Make sure to have a GPU-compatible version of TensorFlow (`>= 2.2.0`) installed
-and install TensorFlow Datasets (`pip install tensorflow-datasets`) to load the
+and install TensorFlow Datasets (`pip install tfds-nightly`) to load the
 [CLEVR dataset](https://cs.stanford.edu/people/jcjohns/clevr/). Lastly, make
 sure you have the `absl-py` package installed: `pip install absl-py`.
 Alternatively you can run `pip3 install -r requirements.txt` (see `run.sh`).
 
-The code was tested on a single GPU with 16GB of memory. Consider reducing the
+The code was tested on a single GPU's with 8GB of memory. Consider reducing the
 batch size to train the model on GPUs with less memory.
 
 NOTE: Executing the code (training or evaluation) for the first time will
 download the full CLEVR dataset (17.7GB).
 
-## Set Prediction
+This is link to the [Slot Attention Module](https://github.com/google-research/google-research/tree/master/slot_attention) codebase. Here is the reference to the codebase for [Relation Network](https://github.com/clvrai/Relation-Network-Tensorflow). We do our own implementation of Relation Network for the VQA downstream task.
 
-To train the set prediction model, navigate to the parent directory
-(`google-research`) and run:
+## OCVQA Directory Structure
+The directory structure to run the training scripts is as follows:
+1) Git clone slot attention module.
+1) Navigate to the the parent directory (`google-research`)  and clone the folders of our codebase at the same level as slot attention folder. 
+2) src folder - contains all the source code for our OCVQA model
+   pretained_weights folder - contains the pretained weights of slot attention module for the task of object discovery.
+   Checkpoints folder - contains all the checpoints during training of OCVQA
 
-```
-python -m slot_attention.set_prediction.train
-```
-
-Model checkpoints will be saved in `/tmp/set_prediction/` (unless otherwise
-specified). For evaluation of a trained model, run:
-
-```
-python -m slot_attention.set_prediction.eval
-```
-
-## Object Discovery
-
-To train the object discovery model, navigate to the parent directory
-(`google-research`) and run:
-
-```
-python -m slot_attention.object_discovery.train
-```
-
-Model checkpoints will be saved in `/tmp/object_discovery/` (unless otherwise
-specified). For evaluation of a trained model, open
-`object_discovery/eval.ipynb` in Jupyter Notebook or Colab. This
-notebook contains code to load a model from a checkpoint and to visualize slot
-reconstructions on the CLEVR dataset.
-
-NOTE: Different from the paper, we train and evaluate the model on the original
-CLEVR dataset (not the version from
-[https://github.com/deepmind/multi_object_datasets](https://github.com/deepmind/multi_object_datasets))
-for simplicity. The original CLEVR dataset does not include mask annotations and
-hence we do not compute segmentation metrics (ARI score). Note also that the
-dataset statistics are different between the two datasets (position/size of
-objects, number of objects per image, etc.). Therefore, results are not directly
-comparable.
-
-## Pre-trained model checkpoints
-
-We provide checkpoints of pre-trained models on the CLEVR dataset. The
-checkpoints are available on Google Cloud Storage:
-* Object discovery: [gs://gresearch/slot-attention/object-discovery](https://console.cloud.google.com/storage/browser/gresearch/slot-attention/object-discovery) (~10MB)
-* Set prediction: [gs://gresearch/slot-attention/set-prediction](https://console.cloud.google.com/storage/browser/gresearch/slot-attention/set-prediction) (~5MB)
-
-To use these checkpoints, download all files into a local checkpoint
-directory, e.g. `/tmp/object_discovery/`, either by using the Google Cloud
-Storage web interface or using [gsutil](https://cloud.google.com/storage/docs/gsutil):
-
-```
-gsutil cp gs://gresearch/slot-attention/object-discovery/* /tmp/object_discovery/
-```
-
-We also provide zip-compressed versions of the checkpoints for easier download
-via the Google Cloud Storage web interface: [gs://gresearch/slot-attention](https://console.cloud.google.com/storage/browser/gresearch/slot-attention)
-
-You can then evaluate these checkpoints using the evaluation script/notebook as
-described above.
+## Training OCVQA
+To train OCVQA you can run either of (script.sh, script_0.sh or script_1.sh). These files are to be run in the parent directory
+(`google-research`). 
+Script.sh runs the model sequentially on whichever GPU is available.
+To run jobs on GPU-0 and GPU-1 use scripe_0.sh and script_1.sh respectively.
