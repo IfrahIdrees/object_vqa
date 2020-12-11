@@ -1,0 +1,24 @@
+
+real	0m2.013s
+user	0m0.001s
+sys	0m0.000s
+
+real	0m2.001s
+user	0m0.000s
+sys	0m0.000s
+
+real	0m10.001s
+user	0m0.001s
+sys	0m0.000s
+0
+checkpoint
+ckpt-1.data-00000-of-00001
+ckpt-1.index
+ckpt-2.data-00000-of-00001
+ckpt-2.index
+ckpt-3.data-00000-of-00001
+ckpt-3.index
+nohup.out
+out.txt
+0.00user 0.00system 0:00.00elapsed ?%CPU (0avgtext+0avgdata 2604maxresident)k
+0inputs+8outputs (0major+107minor)pagefaults 0swaps
