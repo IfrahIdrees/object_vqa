@@ -21,8 +21,8 @@ This is link to the [Slot Attention Module](https://github.com/google-research/g
 The directory structure to run the training scripts is as follows:
 1) Git clone slot attention module.
 1) Navigate to the the parent directory (`google-research`)  and clone the folders of our codebase at the same level as slot attention folder. 
-2) src folder - contains all the source code for our OCVQA model
-   pretained_weights folder - contains the pretained weights of slot attention module for the task of object discovery.
+2) src folder - contains all the source code for our OCVQA model <br/>
+   pretained_weights folder - contains the pretained weights of slot attention module for the task of object discovery. <br/>
    Checkpoints folder - contains all the checpoints during training of OCVQA
 
 ## Training OCVQA
